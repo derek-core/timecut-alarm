@@ -1,0 +1,573 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Trading Time-Cut Alarm</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'SF Pro Display', -apple-system, BlinkMacSystemFont, 'Segoe UI', system-ui, sans-serif;
+            background: #0a0e27;
+            background-image: 
+                radial-gradient(ellipse at 20% 30%, rgba(99, 102, 241, 0.15) 0%, transparent 50%),
+                radial-gradient(ellipse at 80% 70%, rgba(168, 85, 247, 0.15) 0%, transparent 50%);
+            min-height: 100vh;
+            padding: 20px;
+            color: white;
+        }
+
+        .container {
+            max-width: 480px;
+            margin: 0 auto;
+        }
+
+        h1 {
+            text-align: center;
+            margin-bottom: 40px;
+            font-size: 32px;
+            font-weight: 700;
+            letter-spacing: -0.5px;
+            background: linear-gradient(135deg, #6366f1 0%, #a855f7 50%, #ec4899 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+
+        .card {
+            background: rgba(255, 255, 255, 0.05);
+            backdrop-filter: blur(20px);
+            -webkit-backdrop-filter: blur(20px);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            border-radius: 24px;
+            padding: 28px;
+            margin-bottom: 20px;
+            box-shadow: 
+                0 8px 32px rgba(0, 0, 0, 0.3),
+                inset 0 1px 0 rgba(255, 255, 255, 0.1);
+        }
+
+        label {
+            display: block;
+            margin-bottom: 10px;
+            font-weight: 600;
+            color: rgba(255, 255, 255, 0.9);
+            font-size: 13px;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        input[type="text"], 
+        input[type="datetime-local"], 
+        select {
+            width: 100%;
+            padding: 16px;
+            margin-bottom: 24px;
+            background: rgba(255, 255, 255, 0.08);
+            border: 1px solid rgba(255, 255, 255, 0.15);
+            border-radius: 14px;
+            font-size: 16px;
+            color: white;
+            transition: all 0.3s ease;
+        }
+
+        input[type="text"]:focus, 
+        input[type="datetime-local"]:focus,
+        select:focus {
+            outline: none;
+            background: rgba(255, 255, 255, 0.12);
+            border-color: #6366f1;
+            box-shadow: 0 0 0 4px rgba(99, 102, 241, 0.15);
+        }
+
+        input[type="text"]::placeholder {
+            color: rgba(255, 255, 255, 0.4);
+        }
+
+        input[type="datetime-local"] {
+            color-scheme: dark;
+        }
+
+        .timer-presets {
+            display: grid;
+            grid-template-columns: 1fr 1fr 1fr;
+            gap: 12px;
+            margin-bottom: 24px;
+        }
+
+        .preset-btn {
+            padding: 14px;
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            background: rgba(255, 255, 255, 0.05);
+            color: rgba(255, 255, 255, 0.9);
+            border-radius: 12px;
+            font-size: 15px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            backdrop-filter: blur(10px);
+        }
+
+        .preset-btn:hover {
+            background: rgba(255, 255, 255, 0.1);
+            border-color: rgba(255, 255, 255, 0.3);
+            transform: translateY(-2px);
+        }
+
+        .preset-btn.active {
+            background: linear-gradient(135deg, #6366f1 0%, #8b5cf6 100%);
+            color: white;
+            border-color: transparent;
+            box-shadow: 0 4px 16px rgba(99, 102, 241, 0.4);
+        }
+
+        .custom-time {
+            display: none;
+            margin-bottom: 24px;
+        }
+
+        .custom-time.show {
+            display: block;
+        }
+
+        .start-btn {
+            width: 100%;
+            padding: 18px;
+            background: linear-gradient(135deg, #6366f1 0%, #8b5cf6 50%, #a855f7 100%);
+            color: white;
+            border: none;
+            border-radius: 14px;
+            font-size: 17px;
+            font-weight: 700;
+            cursor: pointer;
+            box-shadow: 
+                0 4px 24px rgba(99, 102, 241, 0.4),
+                inset 0 1px 0 rgba(255, 255, 255, 0.2);
+            transition: all 0.3s ease;
+            letter-spacing: 0.3px;
+        }
+
+        .start-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 
+                0 8px 32px rgba(99, 102, 241, 0.5),
+                inset 0 1px 0 rgba(255, 255, 255, 0.2);
+        }
+
+        .start-btn:active {
+            transform: translateY(0);
+        }
+
+        .alarm-item {
+            background: rgba(255, 255, 255, 0.06);
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            border-left: 4px solid #6366f1;
+            padding: 20px;
+            margin-bottom: 14px;
+            border-radius: 16px;
+            position: relative;
+            transition: all 0.3s ease;
+        }
+
+        .alarm-item:hover {
+            background: rgba(255, 255, 255, 0.09);
+            transform: translateX(4px);
+        }
+
+        .alarm-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 12px;
+        }
+
+        .ticker {
+            font-size: 22px;
+            font-weight: 700;
+            background: linear-gradient(135deg, #6366f1 0%, #a855f7 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+
+        .platform {
+            font-size: 12px;
+            color: rgba(255, 255, 255, 0.6);
+            background: rgba(255, 255, 255, 0.1);
+            padding: 6px 12px;
+            border-radius: 8px;
+            font-weight: 500;
+            letter-spacing: 0.3px;
+        }
+
+        .countdown {
+            font-size: 36px;
+            font-weight: 700;
+            color: white;
+            text-align: center;
+            margin: 18px 0;
+            font-variant-numeric: tabular-nums;
+            letter-spacing: 1px;
+        }
+
+        .countdown.warning {
+            color: #f87171;
+            animation: pulse 2s ease-in-out infinite;
+        }
+
+        @keyframes pulse {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.6; }
+        }
+
+        .alarm-footer {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            font-size: 13px;
+            color: rgba(255, 255, 255, 0.5);
+        }
+
+        .cancel-btn {
+            background: rgba(248, 113, 113, 0.15);
+            color: #fca5a5;
+            border: 1px solid rgba(248, 113, 113, 0.3);
+            padding: 8px 18px;
+            border-radius: 8px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            font-size: 13px;
+        }
+
+        .cancel-btn:hover {
+            background: rgba(248, 113, 113, 0.25);
+            border-color: rgba(248, 113, 113, 0.5);
+            transform: translateY(-1px);
+        }
+
+        .empty-state {
+            text-align: center;
+            padding: 50px 20px;
+            color: rgba(255, 255, 255, 0.4);
+            font-size: 15px;
+            line-height: 1.6;
+        }
+
+        .notification-prompt {
+            background: rgba(251, 191, 36, 0.15);
+            border: 1px solid rgba(251, 191, 36, 0.3);
+            color: #fbbf24;
+            padding: 18px;
+            border-radius: 16px;
+            margin-bottom: 24px;
+            text-align: center;
+            font-size: 14px;
+            backdrop-filter: blur(10px);
+        }
+
+        .enable-notif-btn {
+            background: linear-gradient(135deg, #fbbf24 0%, #f59e0b 100%);
+            color: #0a0e27;
+            border: none;
+            padding: 11px 24px;
+            border-radius: 10px;
+            font-weight: 700;
+            margin-top: 12px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            font-size: 14px;
+        }
+
+        .enable-notif-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 20px rgba(251, 191, 36, 0.4);
+        }
+
+        h2 {
+            margin-bottom: 18px;
+            font-size: 18px;
+            font-weight: 600;
+            color: rgba(255, 255, 255, 0.9);
+            letter-spacing: -0.3px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>⏱️ Trading Time-Cut Alarm</h1>
+
+        <div id="notificationPrompt" class="notification-prompt" style="display: none;">
+            <div>📱 Enable push notifications to receive alarms</div>
+            <button class="enable-notif-btn" onclick="requestNotificationPermission()">Enable Notifications</button>
+        </div>
+
+        <div class="card">
+            <label>Ticker</label>
+<input type="text" id="ticker" placeholder="BTC, TSLA, ETH..." maxlength="20">
+
+            <label>Platform</label>
+            <input type="text" id="platform" placeholder="Binance, Hyperliquid, Futures..." maxlength="30">
+
+            <label>Entry Time</label>
+            <div style="display: flex; gap: 10px; align-items: center; margin-bottom: 20px;">
+                <input type="datetime-local" id="entryTime" style="flex: 1; margin-bottom: 0;">
+                <button class="preset-btn" onclick="adjustEntryTime(-5)" style="width: 50px; padding: 10px; margin: 0;">-5m</button>
+                <button class="preset-btn" onclick="adjustEntryTime(5)" style="width: 50px; padding: 10px; margin: 0;">+5m</button>
+            </div>
+
+            <label>Timer Duration</label>
+            <div class="timer-presets">
+                <button class="preset-btn active" data-hours="24">24h</button>
+                <button class="preset-btn" data-hours="72">72h</button>
+                <button class="preset-btn" data-hours="custom">Custom</button>
+            </div>
+
+            <div class="custom-time" id="customTime">
+                <label>Custom Hours</label>
+                <input type="text" id="customHours" placeholder="Enter hours" inputmode="numeric">
+            </div>
+
+            <button class="start-btn" onclick="startAlarm()">START ALARM ⏰</button>
+        </div>
+
+        <div class="card">
+            <h2 style="margin-bottom: 15px; font-size: 18px;">Active Alarms</h2>
+            <div id="alarmsList"></div>
+        </div>
+    </div>
+
+    <script>
+        let alarms = JSON.parse(localStorage.getItem('tradingAlarms') || '[]');
+        let selectedHours = 24;
+
+        // Check notification permission on load
+        window.addEventListener('load', () => {
+            updateAlarmsList();
+            if ('Notification' in window && Notification.permission === 'default') {
+                document.getElementById('notificationPrompt').style.display = 'block';
+            }
+            startAllTimers();
+            
+            // Set entry time to current time
+            setCurrentTime();
+        });
+
+        function setCurrentTime() {
+            const now = new Date();
+            // Format for datetime-local input: YYYY-MM-DDTHH:MM
+            const formattedTime = now.getFullYear() + '-' + 
+                String(now.getMonth() + 1).padStart(2, '0') + '-' + 
+                String(now.getDate()).padStart(2, '0') + 'T' + 
+                String(now.getHours()).padStart(2, '0') + ':' + 
+                String(now.getMinutes()).padStart(2, '0');
+            document.getElementById('entryTime').value = formattedTime;
+        }
+
+        function adjustEntryTime(minutes) {
+            const entryTimeInput = document.getElementById('entryTime');
+            const currentTime = new Date(entryTimeInput.value);
+            currentTime.setMinutes(currentTime.getMinutes() + minutes);
+            
+            const formattedTime = currentTime.getFullYear() + '-' + 
+                String(currentTime.getMonth() + 1).padStart(2, '0') + '-' + 
+                String(currentTime.getDate()).padStart(2, '0') + 'T' + 
+                String(currentTime.getHours()).padStart(2, '0') + ':' + 
+                String(currentTime.getMinutes()).padStart(2, '0');
+            entryTimeInput.value = formattedTime;
+        }
+
+        // Timer preset selection
+        document.querySelectorAll('.preset-btn').forEach(btn => {
+            btn.addEventListener('click', function() {
+                document.querySelectorAll('.preset-btn').forEach(b => b.classList.remove('active'));
+                this.classList.add('active');
+                
+                const hours = this.getAttribute('data-hours');
+                if (hours === 'custom') {
+                    document.getElementById('customTime').classList.add('show');
+                    selectedHours = null;
+                } else {
+                    document.getElementById('customTime').classList.remove('show');
+                    selectedHours = parseInt(hours);
+                }
+            });
+        });
+
+        async function requestNotificationPermission() {
+            if ('Notification' in window) {
+                const permission = await Notification.requestPermission();
+                if (permission === 'granted') {
+                    document.getElementById('notificationPrompt').style.display = 'none';
+                    new Notification('✅ Notifications Enabled', {
+                        body: 'You will receive time-cut alarms',
+                        icon: '⏱️'
+                    });
+                }
+            }
+        }
+
+        function startAlarm() {
+            const ticker = document.getElementById('ticker').value.trim().toUpperCase();
+            const platform = document.getElementById('platform').value.trim();
+            const entryTime = new Date(document.getElementById('entryTime').value).getTime();
+            
+            if (!ticker || !platform) {
+                alert('Please enter both ticker and platform');
+                return;
+            }
+
+            if (isNaN(entryTime)) {
+                alert('Please select a valid entry time');
+                return;
+            }
+
+            let hours = selectedHours;
+            if (hours === null) {
+                const customInput = document.getElementById('customHours').value.trim();
+                hours = parseFloat(customInput);
+                if (isNaN(hours) || hours <= 0) {
+                    alert('Please enter a valid number of hours');
+                    return;
+                }
+            }
+
+            const alarm = {
+                id: Date.now(),
+                ticker,
+                platform,
+                hours,
+                entryTime,
+                startTime: Date.now(),
+                endTime: entryTime + (hours * 60 * 60 * 1000)
+            };
+
+            alarms.push(alarm);
+            saveAlarms();
+            updateAlarmsList();
+
+            // Clear inputs and reset entry time
+            document.getElementById('ticker').value = '';
+            document.getElementById('platform').value = '';
+            document.getElementById('customHours').value = '';
+            setCurrentTime();
+
+            // Request notification permission if not granted
+            if ('Notification' in window && Notification.permission === 'default') {
+                requestNotificationPermission();
+            }
+        }
+
+        function cancelAlarm(id) {
+            alarms = alarms.filter(a => a.id !== id);
+            saveAlarms();
+            updateAlarmsList();
+        }
+
+        function saveAlarms() {
+            localStorage.setItem('tradingAlarms', JSON.stringify(alarms));
+        }
+
+        function updateAlarmsList() {
+            const container = document.getElementById('alarmsList');
+            
+            if (alarms.length === 0) {
+                container.innerHTML = '<div class="empty-state">No active alarms<br>Start one above to track your positions</div>';
+                return;
+            }
+
+            container.innerHTML = alarms.map(alarm => {
+                const remaining = alarm.endTime - Date.now();
+                return `
+                    <div class="alarm-item" id="alarm-${alarm.id}">
+                        <div class="alarm-header">
+                            <span class="ticker">${alarm.ticker}</span>
+                            <span class="platform">${alarm.platform}</span>
+                        </div>
+                        <div class="countdown" id="countdown-${alarm.id}">
+                            ${formatTime(remaining)}
+                        </div>
+                        <div class="alarm-footer">
+                            <span>Entry: ${new Date(alarm.entryTime).toLocaleString('ko-KR', {month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit'})}</span>
+                            <button class="cancel-btn" onclick="cancelAlarm(${alarm.id})">Cancel</button>
+                        </div>
+                    </div>
+                `;
+            }).join('');
+
+            startAllTimers();
+        }
+
+        function formatTime(ms) {
+            if (ms <= 0) return '00:00:00';
+            
+            const seconds = Math.floor(ms / 1000);
+            const hours = Math.floor(seconds / 3600);
+            const minutes = Math.floor((seconds % 3600) / 60);
+            const secs = seconds % 60;
+
+            return `${String(hours).padStart(2, '0')}:${String(minutes).padStart(2, '0')}:${String(secs).padStart(2, '0')}`;
+        }
+
+        function startAllTimers() {
+            alarms.forEach(alarm => {
+                const countdownEl = document.getElementById(`countdown-${alarm.id}`);
+                if (!countdownEl) return;
+
+                const updateCountdown = () => {
+                    const remaining = alarm.endTime - Date.now();
+                    
+                    if (remaining <= 0) {
+                        countdownEl.textContent = 'TIME UP! ⚠️';
+                        countdownEl.classList.add('warning');
+                        sendNotification(alarm);
+                        cancelAlarm(alarm.id);
+                        return;
+                    }
+
+                    countdownEl.textContent = formatTime(remaining);
+                    
+                    // Add warning color in last hour
+                    if (remaining < 60 * 60 * 1000) {
+                        countdownEl.classList.add('warning');
+                    }
+                };
+
+                updateCountdown();
+                setInterval(updateCountdown, 1000);
+            });
+        }
+
+        function sendNotification(alarm) {
+            if ('Notification' in window && Notification.permission === 'granted') {
+                const notification = new Notification(`⚠️ TIME CUT: ${alarm.ticker}`, {
+                    body: `${alarm.platform}\n\nTime expired! Check if P&L is negative and cut position.`,
+                    icon: '⏱️',
+                    requireInteraction: true,
+                    tag: `alarm-${alarm.id}`
+                });
+
+                notification.onclick = () => {
+                    window.focus();
+                    notification.close();
+                };
+            }
+
+            // Also play a sound alert
+            const audio = new Audio('data:audio/wav;base64,UklGRnoGAABXQVZFZm10IBAAAAABAAEAQB8AAEAfAAABAAgAZGF0YQoGAACBhYqFbF1fdJivrJBhNjVgodDbq2EcBj+a2/LDciUFLIHO8tiJNwgZaLvt559NEAxQp+PwtmMcBjiR1/LMeSwFJHfH8N2QQAoUXrTp66hVFApGn+DyvmwhBTGH0fPTgjMGHm7A7+OZTR');
+            audio.play().catch(() => {}); // Ignore if audio blocked
+        }
+
+        // Keep the app alive when in background
+        if ('serviceWorker' in navigator) {
+            navigator.serviceWorker.register('data:text/javascript;base64,');
+        }
+    </script>
+</body>
+</html>
